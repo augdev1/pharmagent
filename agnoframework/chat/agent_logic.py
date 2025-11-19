@@ -21,7 +21,7 @@ load_dotenv()
 
 def get_agent_response(user_message, conversation_id, image_path=None):
     """
-    Configura e executa o agente de IA de vendas.
+    Configura e executa o agente de IA.
     """
     db = get_database()
     llm_model = get_llm_model()
