@@ -27,8 +27,8 @@ Siga estes passos para configurar e rodar o projeto localmente:
 ### 1. Clonar o Repositório
 
 ```bash
-git clone https://github.com/augdev1/Expertvendasai.git
-cd Expertvendasai
+git clone https://github.com/augdev1/pharmagent.git
+cd pharmagent
 ```
 
 ### 2. Configurar Ambiente Virtual
