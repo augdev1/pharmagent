@@ -1,0 +1,6 @@
+Django
+python-dotenv
+django-cors-headers==4.3.1
+whitenoise==6.6.0
+pytesseract==0.3.10
+Pillow==10.3.0

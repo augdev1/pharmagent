@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PHARMA AGENT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'chat/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .cursor {
+            display: inline-block;
+            animation: blink 1s steps(1) infinite;
+        }
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h2>Histórico de Conversas</h2>
+            <a href="{% url 'new_chat' %}" class="new-chat-button">Nova Conversa</a>
+            <ul>
+                {% for conv in conversations %}
+                    <li>
+                        <a href="{% url 'index' conv.id %}" class="{% if conv.id == conversation.id %}active{% endif %}">
+                            {{ conv.title|default:"Nova Conversa" }}
+                        </a>
+                        <form action="{% url 'delete_chat' conv.id %}" method="post" class="delete-chat-form">
+                            {% csrf_token %}
+                            <button type="submit" class="delete-chat-button" title="Apagar histórico">×</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="chat-container">
+            <div class="chat-header">
+                <button id="menu-toggle" class="menu-toggle">☰</button>
+                <h1 class="page-title">PHARMA AGENT</h1>
+            </div>
+        <div class="chat-history">
+            <div class="chat-history-wrapper">
+            {% for message in conversation.history %}
+                <div class="message {{ message.sender }}">
+                    {% if message.sender == 'bot' %}
+                        <div class="avatar bot-avatar">🤖</div>
+                    {% endif %}
+                    <div class="message-content">{{ message.text|escape }}</div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        <script>
+            // Parse existing messages' markdown into HTML on load
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('.chat-history .message-content').forEach(contentDiv => {
+                    const txt = contentDiv.textContent || '';
+                    contentDiv.innerHTML = marked.parse(txt);
+                });
+            });
+        </script>
+        <div class="chat-input">
+            {% csrf_token %}
+            <div id="image-preview-container" style="display: none;">
+                <span id="image-file-name"></span>
+                <button id="remove-image-button">×</button>
+            </div>
+            <input type="file" id="image-input" accept="image/*" style="display: none;">
+            <button id="attach-file-button" title="Anexar Imagem">📎</button>
+            <input type="text" id="user-message" placeholder="Digite sua mensagem...">
+            <button id="send-button">Enviar</button>
+        </div>
+    </div>
+</div>
+
+    <script>
+        const sendButton = document.getElementById('send-button');
+        const messageInput = document.getElementById('user-message');
+        const chatHistoryDiv = document.querySelector('.chat-history-wrapper');
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const attachFileButton = document.getElementById('attach-file-button');
+        const imageInput = document.getElementById('image-input');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imageFileNameSpan = document.getElementById('image-file-name');
+        const removeImageButton = document.getElementById('remove-image-button');
+
+        // Mobile menu toggle
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('show');
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !menuToggle.contains(e.target) && 
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        attachFileButton.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                imageFileNameSpan.textContent = this.files[0].name;
+                imagePreviewContainer.style.display = 'block';
+            }
+        });
+
+        removeImageButton.addEventListener('click', () => {
+            imageInput.value = ''; // Clear the file input
+            imageFileNameSpan.textContent = '';
+            imagePreviewContainer.style.display = 'none';
+        });
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const currentConversationId = "{{ conversation.id }}";
+
+        function sendMessage() {
+            const userMessage = messageInput.value;
+            const imageFile = imageInput.files[0];
+
+            if (userMessage.trim() === '' && !imageFile) {
+                return;
+            }
+
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.classList.add('message', 'user');
+
+            const userAvatar = document.createElement('div');
+            userAvatar.classList.add('avatar', 'user-avatar');
+            userAvatar.textContent = 'VOCÊ';
+
+            const userContent = document.createElement('div');
+            userContent.classList.add('message-content');
+            
+            let messageHTML = '';
+            if (userMessage.trim() !== '') {
+                messageHTML += userMessage;
+            }
+            if (imageFile) {
+                messageHTML += `<br><em>Anexo: ${imageFile.name}</em>`;
+            }
+            userContent.innerHTML = marked.parse(messageHTML);
+
+            // With flex-direction: row-reverse, avatar should come first in DOM to be on the right
+            userMessageDiv.appendChild(userAvatar);
+            userMessageDiv.appendChild(userContent);
+            chatHistoryDiv.appendChild(userMessageDiv);
+
+            messageInput.value = '';
+            imageInput.value = '';
+            imagePreviewContainer.style.display = 'none';
+
+
+            const formData = new FormData();
+            formData.append('userMessage', userMessage);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            formData.append('csrfmiddlewaretoken', csrfToken);
+
+
+            fetch(`/chat/${currentConversationId}/get_response/`, {
+                method: 'POST',
+                body: formData
+                // Headers are not needed for FormData with fetch; browser sets it
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const agentResponse = data.agentResponse;
+                    const botMessageDiv = document.createElement('div');
+                    botMessageDiv.classList.add('message', 'bot');
+
+                    const botAvatar = document.createElement('div');
+                    botAvatar.classList.add('avatar', 'bot-avatar');
+                    botAvatar.textContent = '🤖';
+                    botMessageDiv.appendChild(botAvatar);
+
+                    const botContent = document.createElement('div');
+                    botContent.classList.add('message-content');
+                    botMessageDiv.appendChild(botContent);
+                    chatHistoryDiv.appendChild(botMessageDiv);
+                    scrollToBottom(true);
+
+                    let i = 0;
+                    const speed = 15;
+                    let currentText = '';
+                    
+                    const contentSpan = document.createElement('span');
+                    const cursorSpan = document.createElement('span');
+                    cursorSpan.className = 'cursor';
+                    cursorSpan.innerHTML = '&#9612;';
+
+                    botContent.appendChild(contentSpan);
+                    botContent.appendChild(cursorSpan);
+
+                    function type() {
+                        if (i < agentResponse.length) {
+                            currentText += agentResponse.charAt(i);
+                            contentSpan.innerHTML = marked.parse(currentText);
+                            i++;
+                            // scrollToBottom(false);
+                            setTimeout(type, speed);
+                        } else {
+                            cursorSpan.remove();
+                            botContent.innerHTML = marked.parse(agentResponse);
+                            scrollToBottom(true);
+                        }
+                    }
+                    type();
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                    const errorMessageDiv = document.createElement('div');
+                    errorMessageDiv.classList.add('message', 'bot', 'error');
+                    errorMessageDiv.innerHTML = '<div class="message-content">Ocorreu um erro ao enviar sua mensagem. Por favor, tente novamente.</div>';
+                    chatHistoryDiv.appendChild(errorMessageDiv);
+                    scrollToBottom(true);
+                });
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function scrollToBottom(smooth = false) {
+            const el = document.querySelector('.chat-history');
+            if (!el) return;
+
+            // Only scroll if the user is close to the bottom of the chat.
+            const shouldScroll = el.scrollHeight - el.clientHeight <= el.scrollTop + 150; // 150px buffer
+
+            if (shouldScroll) {
+                try {
+                    const pos = el.scrollHeight;
+                    if (smooth && 'scrollTo' in el) {
+                        el.scrollTo({ top: pos, behavior: 'smooth' });
+                    } else {
+                        el.scrollTop = pos;
+                    }
+                } catch (e) {
+                    console.warn('scrollToBottom failed', e);
+                }
+            }
+        }
+
+        const observer = new MutationObserver((mutations) => {
+            clearTimeout(window.__chat_scroll_timeout);
+            window.__chat_scroll_timeout = setTimeout(() => scrollToBottom(true), 30);
+        });
+        if (chatHistoryDiv) {
+            observer.observe(chatHistoryDiv, { childList: true, subtree: true, characterData: true });
+        }
+
+        window.addEventListener('load', () => {
+            requestAnimationFrame(() => requestAnimationFrame(() => scrollToBottom(true)));
+        });
+
+        messageInput.addEventListener('focus', () => {
+            setTimeout(() => scrollToBottom(true), 250);
+        });
+
+        let _resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(_resizeTimer);
+            _resizeTimer = setTimeout(() => scrollToBottom(true), 200);
+        });
+    </script>
+</body>
+</html>
