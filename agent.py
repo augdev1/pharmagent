@@ -21,9 +21,5 @@ def main():
         markdown=True
     )
    
-    #user_input = "como faço para vender meu agente de ia para um nicho especifico tendo em mente que vou começar por negocios locais?"
-    #resposta = agent.run(input=user_input)
-    #print(resposta.content)
-
 if __name__ == "__main__":
     main()
