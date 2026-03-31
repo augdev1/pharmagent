@@ -2,6 +2,7 @@
 
 Assistente inteligente para cadastro automatizado de receitas, com interface inspirada em soluções de IA de ponta. Realiza leitura de imagens via OCR, interpretação com LLM, e exibe dados organizados para consulta e integração em sistemas farmacêuticos.
 # <img width="1915" height="938" alt="{2ACB85FF-0EC8-43F5-9816-EB699E33B36B}" src="https://github.com/user-attachments/assets/55680a1c-63b9-4d96-8837-e0f87d4ccace" />
+# <img width="1914" height="938" alt="{4E226ABD-F001-4CC7-AEF2-3350F90BE606}" src="https://github.com/user-attachments/assets/4e6daa51-2dba-4f83-90ff-f5c5262a5f7c" />
 
 *   **Chat moderno e funcional:** Interface de chat para interação direta com o agente de IA.
 *   **Histórico de conversas:** Persistência do histórico em banco SQLite com listagem na sidebar.
