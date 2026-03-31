@@ -62,6 +62,20 @@ DJANGO_SECRET_KEY="sua-chave-secreta-aqui" # Gere uma chave segura para produç�
 DJANGO_DEBUG="True"
 ```
 
+### 4.5 Instalar OCR no Windows (Tesseract)
+
+Você deve instalar o OCR **antes de usar upload/leitura de imagem** na aplicação.
+
+1. Baixe e instale o Tesseract OCR para Windows.
+2. Caminho padrão esperado: `C:\Program Files\Tesseract-OCR\tesseract.exe`
+3. Se instalar em outro local, defina no `.env`:
+
+```dotenv
+TESSERACT_CMD="C:\\seu\\caminho\\tesseract.exe"
+```
+
+Sem o Tesseract instalado, o fluxo de OCR (`pytesseract`) não consegue extrair texto das imagens.
+
 ### 5. Migrações do Banco de Dados
 
 Aplique as migrações do Django para configurar o banco de dados:
@@ -85,3 +99,23 @@ python agnoframework/manage.py runserver
 ```
 
 Acesse a aplicação no seu navegador em `http://127.0.0.1:8000/`.
+
+## Inicialização rápida (estilo "npm run dev")
+
+Agora você pode iniciar o projeto com um único comando:
+
+```bash
+python dev.py
+```
+
+Esse comando:
+- carrega o `.env`
+- executa `migrate`
+- sobe o `runserver` em `127.0.0.1:8000`
+
+Opções úteis:
+
+```bash
+python dev.py --no-migrate
+python dev.py --host 0.0.0.0 --port 8001
+```

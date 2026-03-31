@@ -2,8 +2,20 @@ import pytesseract
 from PIL import Image
 import os
 
-# Configure o caminho para o executável do Tesseract OCR
-pytesseract.pytesseract.tesseract_cmd = r'H:\O_IMG\tesseract.exe'
+# Configura o caminho para o executável do Tesseract OCR.
+# Prioriza a variável de ambiente TESSERACT_CMD; em seguida tenta caminhos comuns no Windows.
+_tesseract_cmd = os.getenv("TESSERACT_CMD")
+if _tesseract_cmd and os.path.exists(_tesseract_cmd):
+    pytesseract.pytesseract.tesseract_cmd = _tesseract_cmd
+else:
+    common_windows_paths = [
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ]
+    for candidate in common_windows_paths:
+        if os.path.exists(candidate):
+            pytesseract.pytesseract.tesseract_cmd = candidate
+            break
 
 def extract_text_from_image(image_path):
     """
@@ -20,10 +32,29 @@ def extract_text_from_image(image_path):
             return f"Erro: Arquivo de imagem não encontrado em '{image_path}'"
         
         imagem = Image.open(image_path)
-        texto_extraido = pytesseract.image_to_string(imagem, lang='por')
-        return texto_extraido
+        primary_lang = os.getenv("OCR_LANG", "por")
+        fallback_lang = os.getenv("OCR_FALLBACK_LANG", "eng")
+
+        try:
+            texto_extraido = pytesseract.image_to_string(imagem, lang=primary_lang)
+            return texto_extraido
+        except pytesseract.TesseractError as e:
+            erro = str(e)
+            if "Failed loading language" in erro and primary_lang != fallback_lang:
+                texto_extraido = pytesseract.image_to_string(imagem, lang=fallback_lang)
+                return texto_extraido
+            raise
     except pytesseract.TesseractNotFoundError:
-        return "Erro: Tesseract não encontrado. Verifique a configuração."
+        return (
+            "Erro: Tesseract não encontrado. Instale o Tesseract OCR no Windows "
+            "e configure a variável de ambiente TESSERACT_CMD, se necessário."
+        )
+    except pytesseract.TesseractError as e:
+        return (
+            "Erro do Tesseract ao processar OCR: "
+            f"{e}. Se estiver usando português, instale o arquivo por.traineddata "
+            "na pasta tessdata do Tesseract."
+        )
     except Exception as e:
         return f"Ocorreu um erro inesperado durante o OCR: {e}"
 

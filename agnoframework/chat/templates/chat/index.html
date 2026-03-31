@@ -177,11 +177,13 @@
                 body: formData
                 // Headers are not needed for FormData with fetch; browser sets it
             })
-                .then(response => {
+                .then(async response => {
+                    const data = await response.json().catch(() => ({}));
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        const errorMsg = data.error || `HTTP error! status: ${response.status}`;
+                        throw new Error(errorMsg);
                     }
-                    return response.json();
+                    return data;
                 })
                 .then(data => {
                     const agentResponse = data.agentResponse;
@@ -230,7 +232,8 @@
                     console.error('Error sending message:', error);
                     const errorMessageDiv = document.createElement('div');
                     errorMessageDiv.classList.add('message', 'bot', 'error');
-                    errorMessageDiv.innerHTML = '<div class="message-content">Ocorreu um erro ao enviar sua mensagem. Por favor, tente novamente.</div>';
+                    const message = error?.message || 'Ocorreu um erro ao enviar sua mensagem. Por favor, tente novamente.';
+                    errorMessageDiv.innerHTML = `<div class="message-content">${message}</div>`;
                     chatHistoryDiv.appendChild(errorMessageDiv);
                     scrollToBottom(true);
                 });
