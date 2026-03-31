@@ -39,6 +39,11 @@
                     </li>
                 {% endfor %}
             </ul>
+            {% if has_more_conversations %}
+                <div class="more-conversations">
+                    Mostrando ultimas {{ max_conversations }} conversas
+                </div>
+            {% endif %}
         </div>
         <div class="chat-container">
             <div class="chat-header">
@@ -51,10 +56,12 @@
             </div>
         <div class="chat-history">
             <div class="chat-history-wrapper">
-            {% for message in conversation.history %}
+            {% for message in conversation_history %}
                 <div class="message {{ message.sender }}">
                     {% if message.sender == 'bot' %}
                         <div class="avatar bot-avatar">🤖</div>
+                    {% elif message.sender == 'user' %}
+                        <div class="avatar user-avatar">🧑‍⚕️</div>
                     {% endif %}
                     <div class="message-content">{{ message.text|escape }}</div>
                 </div>
@@ -95,6 +102,7 @@
         const imagePreviewContainer = document.getElementById('image-preview-container');
         const imageFileNameSpan = document.getElementById('image-file-name');
         const removeImageButton = document.getElementById('remove-image-button');
+        let preparedImageFile = null;
 
         const appContainer = document.querySelector('.app-container');
 
@@ -123,25 +131,90 @@
             imageInput.click();
         });
 
+        function prepareImage(file) {
+            const maxDim = 1280;
+            const quality = 0.82;
+
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const objectUrl = URL.createObjectURL(file);
+
+                img.onload = () => {
+                    let targetW = img.width;
+                    let targetH = img.height;
+                    const scale = Math.min(maxDim / targetW, maxDim / targetH, 1);
+                    targetW = Math.round(targetW * scale);
+                    targetH = Math.round(targetH * scale);
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+                    canvas.toBlob((blob) => {
+                        URL.revokeObjectURL(objectUrl);
+                        if (!blob) {
+                            reject(new Error('Falha ao otimizar a imagem.'));
+                            return;
+                        }
+                        const baseName = file.name.replace(/\.[^/.]+$/, '');
+                        const optimizedName = `${baseName || 'imagem'}_otimizada.jpg`;
+                        resolve(new File([blob], optimizedName, { type: 'image/jpeg' }));
+                    }, 'image/jpeg', quality);
+                };
+
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error('Falha ao carregar a imagem.'));
+                };
+
+                img.src = objectUrl;
+            });
+        }
+
         imageInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                imageFileNameSpan.textContent = this.files[0].name;
-                imagePreviewContainer.style.display = 'block';
-            }
+            const file = this.files && this.files[0];
+            if (!file) return;
+
+            preparedImageFile = null;
+            imageFileNameSpan.textContent = file.name;
+            imagePreviewContainer.style.display = 'block';
+
+            prepareImage(file)
+                .then((optimized) => {
+                    preparedImageFile = optimized;
+                    imageFileNameSpan.textContent = `${file.name} (otimizada)`;
+                })
+                .catch(() => {
+                    preparedImageFile = file;
+                });
         });
 
         removeImageButton.addEventListener('click', () => {
             imageInput.value = ''; // Clear the file input
             imageFileNameSpan.textContent = '';
             imagePreviewContainer.style.display = 'none';
+            preparedImageFile = null;
         });
 
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         const currentConversationId = "{{ conversation.id }}";
+        const maxMessages = Number("{{ max_messages }}") || 50;
+
+        function trimChatHistory() {
+            const messages = chatHistoryDiv.querySelectorAll('.message');
+            const excess = messages.length - maxMessages;
+            if (excess > 0) {
+                for (let i = 0; i < excess; i++) {
+                    messages[i].remove();
+                }
+            }
+        }
 
         function sendMessage() {
             const userMessage = messageInput.value;
-            const imageFile = imageInput.files[0];
+            const imageFile = preparedImageFile || imageInput.files[0];
 
             if (userMessage.trim() === '' && !imageFile) {
                 return;
@@ -152,7 +225,7 @@
 
             const userAvatar = document.createElement('div');
             userAvatar.classList.add('avatar', 'user-avatar');
-            userAvatar.textContent = 'VOCÊ';
+            userAvatar.textContent = '🧑‍⚕️';
 
             const userContent = document.createElement('div');
             userContent.classList.add('message-content');
@@ -170,16 +243,18 @@
             userMessageDiv.appendChild(userAvatar);
             userMessageDiv.appendChild(userContent);
             chatHistoryDiv.appendChild(userMessageDiv);
+            trimChatHistory();
 
             messageInput.value = '';
             imageInput.value = '';
             imagePreviewContainer.style.display = 'none';
+            preparedImageFile = null;
 
 
             const formData = new FormData();
             formData.append('userMessage', userMessage);
             if (imageFile) {
-                formData.append('image', imageFile);
+                formData.append('image', imageFile, imageFile.name || 'upload.jpg');
             }
             formData.append('csrfmiddlewaretoken', csrfToken);
 
@@ -211,12 +286,20 @@
                     botContent.classList.add('message-content');
                     botMessageDiv.appendChild(botContent);
                     chatHistoryDiv.appendChild(botMessageDiv);
+                    trimChatHistory();
                     scrollToBottom(true);
+
+                    const typingThreshold = 800;
+                    if (agentResponse.length > typingThreshold) {
+                        botContent.innerHTML = marked.parse(agentResponse);
+                        scrollToBottom(true);
+                        return;
+                    }
 
                     let i = 0;
                     const speed = 15;
                     let currentText = '';
-                    
+
                     const contentSpan = document.createElement('span');
                     const cursorSpan = document.createElement('span');
                     cursorSpan.className = 'cursor';
@@ -230,7 +313,6 @@
                             currentText += agentResponse.charAt(i);
                             contentSpan.innerHTML = marked.parse(currentText);
                             i++;
-                            // scrollToBottom(false);
                             setTimeout(type, speed);
                         } else {
                             cursorSpan.remove();
@@ -247,6 +329,7 @@
                     const message = error?.message || 'Ocorreu um erro ao enviar sua mensagem. Por favor, tente novamente.';
                     errorMessageDiv.innerHTML = `<div class="message-content">${message}</div>`;
                     chatHistoryDiv.appendChild(errorMessageDiv);
+                    trimChatHistory();
                     scrollToBottom(true);
                 });
         }

@@ -24,12 +24,21 @@ def index(request, conversation_id=None):
         return redirect('new_chat')
 
     conversation = get_object_or_404(Conversation, id=conversation_id)
+    max_messages = 50
+    conversation_history = conversation.history[-max_messages:]
     
-    conversations = Conversation.objects.exclude(title__isnull=True).exclude(title__exact='').order_by('-created_at')
+    conversations_qs = Conversation.objects.exclude(title__isnull=True).exclude(title__exact='').order_by('-created_at')
+    max_conversations = 30
+    has_more_conversations = conversations_qs.count() > max_conversations
+    conversations = conversations_qs[:max_conversations]
     
     return render(request, "chat/index.html", {
         'conversation': conversation,
-        'conversations': conversations
+        'conversation_history': conversation_history,
+        'conversations': conversations,
+        'max_messages': max_messages,
+        'max_conversations': max_conversations,
+        'has_more_conversations': has_more_conversations,
     })
 
 def get_response(request, conversation_id):
