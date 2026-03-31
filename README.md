@@ -1,7 +1,7 @@
 # Projeto: Pharma Agent
 
 Assistente inteligente para cadastro automatizado de receitas, com interface inspirada em soluções de IA de ponta. Realiza leitura de imagens via OCR, interpretação com LLM, e exibe dados organizados para consulta e integração em sistemas farmacêuticos.
-
+# <img width="1914" height="936" alt="{3D1060E2-58D3-466E-A52C-83B76325DC1C}" src="https://github.com/user-attachments/assets/28750924-b765-4ffb-a379-9143ef825ac3" />
 
 ## Destaques
 
