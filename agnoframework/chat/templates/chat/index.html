@@ -42,7 +42,11 @@
         </div>
         <div class="chat-container">
             <div class="chat-header">
-                <button id="menu-toggle" class="menu-toggle">☰</button>
+                <button id="menu-toggle" class="menu-toggle" aria-label="Menu">
+                    <span class="bar bar1"></span>
+                    <span class="bar bar2"></span>
+                    <span class="bar bar3"></span>
+                </button>
                 <h1 class="page-title">PHARMA AGENT</h1>
             </div>
         <div class="chat-history">
@@ -92,18 +96,26 @@
         const imageFileNameSpan = document.getElementById('image-file-name');
         const removeImageButton = document.getElementById('remove-image-button');
 
-        // Mobile menu toggle
+        const appContainer = document.querySelector('.app-container');
+
+        // Hamburger toggle — desktop collapses sidebar, mobile slides in
         menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('show');
+            menuToggle.classList.toggle('open');
+            if (window.innerWidth > 768) {
+                appContainer.classList.toggle('sidebar-hidden');
+            } else {
+                sidebar.classList.toggle('show');
+            }
         });
 
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(e.target) && 
-                !menuToggle.contains(e.target) && 
+            if (window.innerWidth <= 768 &&
+                !sidebar.contains(e.target) &&
+                !menuToggle.contains(e.target) &&
                 sidebar.classList.contains('show')) {
                 sidebar.classList.remove('show');
+                menuToggle.classList.remove('open');
             }
         });
 
