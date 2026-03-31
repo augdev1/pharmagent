@@ -4,10 +4,21 @@ Assistente inteligente para cadastro automatizado de receitas, com interface ins
 # <img width="1915" height="938" alt="{2ACB85FF-0EC8-43F5-9816-EB699E33B36B}" src="https://github.com/user-attachments/assets/55680a1c-63b9-4d96-8837-e0f87d4ccace" />
 
 *   **Chat moderno e funcional:** Interface de chat para interação direta com o agente de IA.
+*   **Histórico de conversas:** Persistência do histórico em banco SQLite com listagem na sidebar.
 *   **Processamento multimodal (imagem → texto → dado estruturado):** Extrai informações de imagens de receitas usando OCR e as processa com um LLM.
 *   **Backend Django, banco SQLite:** Utiliza o framework Django para o backend e SQLite para o banco de dados.
 *   **Framework de agentes Agno:** Orquestração do agente de IA e do modelo de linguagem.
 *   **UI/UX inspirada no Perplexity:** Design da interface de usuário inspirado em soluções de IA de ponta.
+*   **Upload de imagem otimizado no client:** Reduz tamanho antes do envio para acelerar OCR.
+*   **Resposta em Markdown:** Conteúdo estruturado com listas e formatação legível.
+*   **Healthcheck de LLM e OCR:** Endpoint para validar dependências e configurações.
+
+## Funcionalidades
+
+*   **Cadastro de receitas com IA:** Interpretação de texto e imagens e saída estruturada.
+*   **OCR com fallback de idioma:** Suporta português e inglês quando necessário.
+*   **Gerenciamento de conversas:** Criar, listar e remover conversas.
+*   **Frontend responsivo:** Layout otimizado para desktop e mobile.
 
 ## Tecnologias Utilizadas
 *   **Agno:** Orquestrador de LLMs
